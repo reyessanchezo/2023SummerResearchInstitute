@@ -2,4 +2,5 @@
 As part of the University of Indianapolis' SRI program, I am conducting research on the application of computer vision technology for use in smart home security. 
 
 Resources
-OpenCV, Python, 
+(https://github.com/informramiz/opencv-face-recognition-python)
+OpenCV
