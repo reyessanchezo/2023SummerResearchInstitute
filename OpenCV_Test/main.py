@@ -10,19 +10,19 @@ import os
 import numpy as np
 import colorsys
 
+# conversion from single value to three r,g,b values.
 def hsl_to_bgr(h, s, l):
     r, g, b = tuple(round(i * 255) for i in colorsys.hls_to_rgb(h / 360.0, l / 100.0, s / 100.0))
     return (b, g, r)
 
-#there is no label 0 in our training data so subject name for index/label 0 is empty
-subjects = ["Oscar", "Ramiz", "Elvis"]
+# The different saved persons
+subjects = ["Oscar", "(author)", "Elvis"]
 
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # load OpenCV face detector, I am using LBP which is fast
-    # there is also a more accurate but slow Haar classifier
+    # load OpenCV face detector, I am using more accurate but slow Haar classifier
     haar_cascade = cv2.CascadeClassifier('Haarcascade_frontalface_default.xml')
 
     # let's detect multiscale (some images may be closer to camera than others) images
@@ -31,10 +31,13 @@ def detect_face(img):
 
     # if no faces are detected then return original img
     if (len(faces) == 0):
-        return gray, (1, 2, 1, 2) # FIXME?
+        return None, None
+    # None, None causes predict() to crash because it expects a shape with some dimension
+    # My solution is to only call predict() and related if a face is detected
 
     # under the assumption that there will be only one face,
     # extract the face area
+    # This means only one face is detected at a time
     (x, y, w, h) = faces[0]
 
     # return only the face part of the image
@@ -92,8 +95,8 @@ def prepare_training_data(data_folder_path):
             image = cv2.imread(image_path)
 
             # display an image window to show the image
-            cv2.imshow("Training on image...", cv2.resize(image, (200, 200)))
-            #cv2.waitKey(2)
+            cv2.imshow("Training on images...", cv2.resize(image, (400, 400)))
+            # cv2.waitKey(50)
             # detect face
             face, rect = detect_face(image)
 
@@ -105,6 +108,8 @@ def prepare_training_data(data_folder_path):
                 faces.append(face)
                 # add label for this face
                 labels.append(label)
+            else:
+                print("ignored " + image_path)
 
 
     cv2.destroyAllWindows()
@@ -113,28 +118,28 @@ def prepare_training_data(data_folder_path):
 
     return faces, labels
 
-#let's first prepare our training data
-#data will be in two lists of same size
-#one list will contain all the faces
-#and other list will contain respective labels for each face
+# let's first prepare our training data
+# data will be in two lists of same size
+# one list will contain all the faces
+# and other list will contain respective labels for each face
 print("Preparing data...")
 faces, labels = prepare_training_data("training-data")
 print("Data prepared")
 
-#print total faces and labels
+# print total faces and labels
 print("Total faces: ", len(faces))
 print("Total labels: ", len(labels))
 
-#create our LBPH face recognizer
+# create LBPH face recognizer
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 
-#train our face recognizer of our training faces
+# train our face recognizer of our training faces
 face_recognizer.train(faces, np.array(labels))
 
 
 # function to draw rectangle on image
 # according to given (x, y) coordinates and
-# given width and heigh
+# given width and height
 def draw_rectangle(img, rect, confidence):
     h = 120 * confidence / 100  # Map confidence from 0-100 to hue from red to green
     bgr = hsl_to_bgr(h, 100, 50)
@@ -157,16 +162,17 @@ def predict(test_img):
     img = test_img.copy()
     # detect face from the image
     face, rect = detect_face(img)
+    # if no face is detected, skip.
+    if face is not None:
+        # predict the image using our face recognizer
+        label, confidence = face_recognizer.predict(face)
+        # get name of respective label returned by face recognizer
+        label_text = subjects[label] + " " + str(round(confidence,3)) + "%"
 
-    # predict the image using our face recognizer
-    label, confidence = face_recognizer.predict(face)
-    # get name of respective label returned by face recognizer
-    label_text = subjects[label] + " " + str(round(confidence,3)) + "%"
-
-    # draw a rectangle around face detected
-    draw_rectangle(img, rect, confidence)
-    # draw name of predicted person
-    draw_text(img, label_text, rect[0], rect[1] - 5)
+        # draw a rectangle around face detected
+        draw_rectangle(img, rect, confidence)
+        # draw name of predicted person
+        draw_text(img, label_text, rect[0], rect[1] - 5)
 
     return img
 
@@ -175,16 +181,13 @@ print("Predicting test images...")
 #load test images
 test_img1 = cv2.imread("test-data/test1.jpg")
 test_img2 = cv2.imread("test-data/test2.jpg")
-#test_img3 = cv2.imread("test-data/test3.jpg")
 
 #perform a prediction
 predicted_img1 = predict(test_img1)
 predicted_img2 = predict(test_img2)
-#predicted_img3 = predict(test_img3)
 print("Prediction complete")
 
 #display both images
-#cv2.imshow(subjects[0], cv2.resize(predicted_img3, (400, 500)))
 cv2.imshow(subjects[1], cv2.resize(predicted_img1, (400, 500)))
 cv2.imshow(subjects[2], cv2.resize(predicted_img2, (400, 500)))
 cv2.waitKey(0)
@@ -193,25 +196,26 @@ cv2.waitKey(1)
 cv2.destroyAllWindows()
 
 print("Opening webcam, please wait...")
-cv2.namedWindow("Webcam")
+cv2.namedWindow("Webcam - ESC to close")
 vc = cv2.VideoCapture(0)  # turn on the camera
 
 
 if vc.isOpened():  # try to get the first frame from webcam
     rval, frame = vc.read()
     frame = cv2.flip(frame, 1)
+    print("Press ESC to close")
 else:
     rval = False
 
 while rval:
     # perform a prediction
     predicted_frame = predict(frame)
-    cv2.imshow("Webcam", predicted_frame)
+    cv2.imshow("Webcam - ESC to close", predicted_frame)
     rval, frame = vc.read()
     frame = cv2.flip(frame, 1)
     key = cv2.waitKey(50)
     if key == 27:  # exit on ESC
         break
 
-cv2.destroyWindow("Webcam")
+cv2.destroyWindow("Webcam - ESC to close")
 vc.release()
