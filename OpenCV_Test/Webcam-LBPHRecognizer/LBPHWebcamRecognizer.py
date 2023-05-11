@@ -27,7 +27,7 @@ def detect_face(img):
 
     # let's detect multiscale (some images may be closer to camera than others) images
     # result is a list of faces
-    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=5);
+    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=6);
 
     # if no faces are detected then return original img
     if (len(faces) == 0):
@@ -95,8 +95,8 @@ def prepare_training_data(data_folder_path):
             image = cv2.imread(image_path)
 
             # display an image window to show the image
-            cv2.imshow("Training on images...", cv2.resize(image, (400, 400)))
-            # cv2.waitKey(50)
+            cv2.imshow("Training on images...", cv2.resize(image, (640, 360)))
+            cv2.waitKey(50)
             # detect face
             face, rect = detect_face(image)
 
@@ -171,26 +171,30 @@ def predict(test_img):
 
         # draw a rectangle around face detected
         draw_rectangle(img, rect, confidence)
+
         if confidence > 60:  # draw name of predicted person
             draw_text(img, label_text, rect[0], rect[1] - 5)
+            if label == 0:  # If the person identified is Oscar, do "PASS"
+                draw_text(img, "PASS", 10, 10)
         else:
             draw_text(img, "Unknown", rect[0], rect[1] - 5)
 
     return img
 
+
 print("Predicting test images...")
 
-#load test images
-test_img1 = cv2.imread("test-data/test1.jpg")
+# load test images
+test_img1 = cv2.imread("test-data/test3.jpg")
 test_img2 = cv2.imread("test-data/test2.jpg")
 
-#perform a prediction
+# perform a prediction
 predicted_img1 = predict(test_img1)
 predicted_img2 = predict(test_img2)
 print("Prediction complete")
 
-#display both images
-cv2.imshow(subjects[1], cv2.resize(predicted_img1, (400, 500)))
+# display both images
+cv2.imshow(subjects[0], cv2.resize(predicted_img1, (640, 360)))
 cv2.imshow(subjects[2], cv2.resize(predicted_img2, (400, 500)))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
@@ -204,7 +208,7 @@ vc = cv2.VideoCapture(0)  # turn on the camera
 
 if vc.isOpened():  # try to get the first frame from webcam
     rval, frame = vc.read()
-    frame = cv2.flip(frame, 1)
+    frame = cv2.flip(frame, 1)  # Flip image to match training data
     print("Press ESC to close")
 else:
     rval = False
@@ -214,7 +218,7 @@ while rval:
     predicted_frame = predict(frame)
     cv2.imshow("Webcam - ESC to close", predicted_frame)
     rval, frame = vc.read()
-    frame = cv2.flip(frame, 1)
+    # frame = cv2.flip(frame, 1)
     key = cv2.waitKey(50)
     if key == 27:  # exit on ESC
         break
