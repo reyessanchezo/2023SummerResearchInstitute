@@ -171,8 +171,10 @@ def predict(test_img):
 
         # draw a rectangle around face detected
         draw_rectangle(img, rect, confidence)
-        # draw name of predicted person
-        draw_text(img, label_text, rect[0], rect[1] - 5)
+        if confidence > 60:  # draw name of predicted person
+            draw_text(img, label_text, rect[0], rect[1] - 5)
+        else:
+            draw_text(img, "Unknown", rect[0], rect[1] - 5)
 
     return img
 
