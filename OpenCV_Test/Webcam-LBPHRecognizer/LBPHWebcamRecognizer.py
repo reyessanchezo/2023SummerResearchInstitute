@@ -96,7 +96,7 @@ def prepare_training_data(data_folder_path):
 
             # display an image window to show the image
             cv2.imshow("Training on images...", cv2.resize(image, (640, 360)))
-            cv2.waitKey(50)
+            # cv2.waitKey(50)
             # detect face
             face, rect = detect_face(image)
 
@@ -118,7 +118,8 @@ def prepare_training_data(data_folder_path):
 
     return faces, labels
 
-# let's first prepare our training data
+
+# let's first prepare our training data.
 # data will be in two lists of same size
 # one list will contain all the faces
 # and other list will contain respective labels for each face
@@ -150,8 +151,8 @@ def draw_rectangle(img, rect, confidence):
 
 # function to draw text on give image starting from
 # passed (x, y) coordinates.
-def draw_text(img, text, x, y):
-    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, 1, (0, 255, 0), 1)
+def draw_text(img, text, x, y, scale=1.0):
+    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, scale, (0, 255, 0), 1)
 
 
 # this function recognizes the person in image passed
@@ -175,9 +176,9 @@ def predict(test_img):
         if confidence > 60:  # draw name of predicted person
             draw_text(img, label_text, rect[0], rect[1] - 5)
             if label == 0:  # If the person identified is Oscar, do "PASS"
-                draw_text(img, "PASS", 10, 10)
+                draw_text(img, "PASS", 10, 10, 2)
         else:
-            draw_text(img, "Unknown", rect[0], rect[1] - 5)
+            draw_text(img, "Unknown, maybe " + label_text, rect[0], rect[1] - 5)
 
     return img
 
