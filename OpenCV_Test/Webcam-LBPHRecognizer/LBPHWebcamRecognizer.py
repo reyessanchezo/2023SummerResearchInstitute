@@ -3,20 +3,23 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-#import OpenCV module
+# import OpenCV module
 import cv2
 #os module for reading training data directories and paths
 import os
 import numpy as np
 import colorsys
 
+
 # conversion from single value to three r,g,b values.
 def hsl_to_bgr(h, s, l):
     r, g, b = tuple(round(i * 255) for i in colorsys.hls_to_rgb(h / 360.0, l / 100.0, s / 100.0))
-    return (b, g, r)
+    return b, g, r
+
 
 # The different saved persons
-subjects = ["Oscar", "(author)", "Elvis"]
+subjects = ["Oscar"]  # , "(author)", "Elvis"
+
 
 def detect_face(img):
     # convert the test image to gray image as opencv face detector expects gray images
@@ -27,10 +30,10 @@ def detect_face(img):
 
     # let's detect multiscale (some images may be closer to camera than others) images
     # result is a list of faces
-    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=6);
+    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=8)
 
     # if no faces are detected then return original img
-    if (len(faces) == 0):
+    if len(faces) == 0:
         return None, None
     # None, None causes predict() to crash because it expects a shape with some dimension
     # My solution is to only call predict() and related if a face is detected
@@ -63,7 +66,7 @@ def prepare_training_data(data_folder_path):
         # our subject directories start with letter 's' so
         # ignore any non-relevant directories if any
         if not dir_name.startswith("s"):
-            continue;
+            continue
 
         # ------STEP-2--------
         # extract label number of subject from dir_name
@@ -71,7 +74,7 @@ def prepare_training_data(data_folder_path):
         # , so removing letter 's' from dir_name will give us label
         label = int(dir_name.replace("s", ""))
 
-        # build path of directory containing images for current subject subject
+        # build path of directory containing images for current subject
         # sample subject_dir_path = "training-data/s1"
         subject_dir_path = data_folder_path + "/" + dir_name
 
@@ -85,7 +88,7 @@ def prepare_training_data(data_folder_path):
 
             # ignore system files like .DS_Store
             if image_name.startswith("."):
-                continue;
+                continue
 
             # build image path
             # sample image path = training-data/s1/1.pgm
@@ -95,7 +98,7 @@ def prepare_training_data(data_folder_path):
             image = cv2.imread(image_path)
 
             # display an image window to show the image
-            cv2.imshow("Training on images...", cv2.resize(image, (640, 360)))
+            # cv2.imshow("Training on images...", cv2.resize(image, (640, 360)))
             # cv2.waitKey(50)
             # detect face
             face, rect = detect_face(image)
@@ -110,7 +113,6 @@ def prepare_training_data(data_folder_path):
                 labels.append(label)
             else:
                 print("ignored " + image_path)
-
 
     cv2.destroyAllWindows()
     cv2.waitKey(1)
@@ -131,7 +133,7 @@ print("Data prepared")
 print("Total faces: ", len(faces))
 print("Total labels: ", len(labels))
 
-# create LBPH face recognizer
+# create LBPH face recognizer, replace LBPH with Fisher/Eigen for the other models
 face_recognizer = cv2.face.LBPHFaceRecognizer_create()
 
 # train our face recognizer of our training faces
@@ -152,7 +154,7 @@ def draw_rectangle(img, rect, confidence):
 # function to draw text on give image starting from
 # passed (x, y) coordinates.
 def draw_text(img, text, x, y, scale=1.0):
-    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, scale, (0, 255, 0), 1)
+    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, scale, (200, 200, 200), 1)
 
 
 # this function recognizes the person in image passed
@@ -178,7 +180,7 @@ def predict(test_img):
             if label == 0:  # If the person identified is Oscar, do "PASS"
                 draw_text(img, "PASS", 10, 10, 2)
         else:
-            draw_text(img, "Unknown, maybe " + label_text, rect[0], rect[1] - 5)
+            draw_text(img, "Unknown", rect[0], rect[1] - 5)
 
     return img
 
@@ -195,12 +197,14 @@ predicted_img2 = predict(test_img2)
 print("Prediction complete")
 
 # display both images
+"""
 cv2.imshow(subjects[0], cv2.resize(predicted_img1, (640, 360)))
 cv2.imshow(subjects[2], cv2.resize(predicted_img2, (400, 500)))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 cv2.waitKey(1)
 cv2.destroyAllWindows()
+"""
 
 print("Opening webcam, please wait...")
 cv2.namedWindow("Webcam - ESC to close")
@@ -209,7 +213,7 @@ vc = cv2.VideoCapture(0)  # turn on the camera
 
 if vc.isOpened():  # try to get the first frame from webcam
     rval, frame = vc.read()
-    frame = cv2.flip(frame, 1)  # Flip image to match training data
+    cv2.imshow("Webcam - ESC to close", frame)
     print("Press ESC to close")
 else:
     rval = False
@@ -220,7 +224,7 @@ while rval:
     cv2.imshow("Webcam - ESC to close", predicted_frame)
     rval, frame = vc.read()
     # frame = cv2.flip(frame, 1)
-    key = cv2.waitKey(50)
+    key = cv2.waitKey(20)
     if key == 27:  # exit on ESC
         break
 
