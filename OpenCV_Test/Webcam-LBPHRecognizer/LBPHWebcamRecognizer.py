@@ -30,7 +30,7 @@ def detect_face(img):
 
     # let's detect multiscale (some images may be closer to camera than others) images
     # result is a list of faces
-    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=8)
+    faces = haar_cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=6)
 
     # if no faces are detected then return original img
     if len(faces) == 0:
@@ -154,7 +154,7 @@ def draw_rectangle(img, rect, confidence):
 # function to draw text on give image starting from
 # passed (x, y) coordinates.
 def draw_text(img, text, x, y, scale=1.0):
-    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, scale, (200, 200, 200), 1)
+    cv2.putText(img, text, (x, y), cv2.FONT_HERSHEY_PLAIN, scale, (200, 200, 200), 2)
 
 
 # this function recognizes the person in image passed
