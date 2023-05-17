@@ -26,7 +26,7 @@ def detect_face(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # load OpenCV face detector, I am using more accurate but slow Haar classifier
-    haar_cascade = cv2.CascadeClassifier('Haarcascade_frontalface_default.xml')
+    haar_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
     # let's detect multiscale (some images may be closer to camera than others) images
     # result is a list of faces
